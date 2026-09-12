@@ -2,4 +2,7 @@
 <resources>
     <string name="app_name">Ringly</string>
     <string name="device_id_label_format">Device ID: %1$s</string>
+    <string name="status_registering">Registering…</string>
+    <string name="status_registered_format">Registered: %1$s</string>
+    <string name="status_register_failed">Register failed — check connection</string>
 </resources>
