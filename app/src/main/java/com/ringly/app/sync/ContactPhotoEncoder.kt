@@ -15,6 +15,7 @@ object ContactPhotoEncoder {
         val output = ByteArrayOutputStream()
         scaled.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, output)
         if (scaled !== bitmap) scaled.recycle()
+        bitmap.recycle()
         val base64 = Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
         return "data:image/jpeg;base64,$base64"
     }
