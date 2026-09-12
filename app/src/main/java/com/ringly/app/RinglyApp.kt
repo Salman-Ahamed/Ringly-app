@@ -1,5 +1,6 @@
 package com.ringly.app
 
+import android.Manifest
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -14,6 +15,7 @@ import com.ringly.app.data.session.SharedPreferencesUserSessionStorage
 import com.ringly.app.sync.ContactChangeObserver
 import com.ringly.app.sync.ContactSyncWorker
 import com.ringly.app.sync.SyncScheduler
+import com.ringly.app.util.PermissionHelper
 
 class RinglyApp : Application(), Configuration.Provider {
 
@@ -47,6 +49,10 @@ class RinglyApp : Application(), Configuration.Provider {
         }
     }
 
+    private val contactObserver: ContactChangeObserver by lazy {
+        ContactChangeObserver(onContactsChanged = { syncScheduler.scheduleOneShot() })
+    }
+
     override fun onCreate() {
         super.onCreate()
         observeLifecycle()
@@ -59,12 +65,17 @@ class RinglyApp : Application(), Configuration.Provider {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 syncScheduler.scheduleOneShot()
+                observeContactChanges()
             }
         })
     }
 
     private fun observeContactChanges() {
-        ContactChangeObserver(onContactsChanged = { syncScheduler.scheduleOneShot() })
-            .also { it.register(this) }
+        if (!PermissionHelper.hasPermission(this, Manifest.permission.READ_CONTACTS)) return
+        try {
+            contactObserver.register(this)
+        } catch (e: Exception) {
+            // content provider unavailable (e.g. permission revoked mid-run) — retry next onStart
+        }
     }
 }

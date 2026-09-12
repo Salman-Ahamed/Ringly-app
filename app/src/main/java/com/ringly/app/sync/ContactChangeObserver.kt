@@ -18,18 +18,18 @@ class ContactChangeObserver(
 
     fun register(context: Context) {
         if (registered) return
-        registered = true
         val contentObserver = object : ContentObserver(handler) {
             override fun onChange(selfChange: Boolean) {
                 notifyDebounced()
             }
         }
-        observer = contentObserver
         context.contentResolver.registerContentObserver(
             ContactsContract.Contacts.CONTENT_URI,
             true,
             contentObserver
         )
+        observer = contentObserver
+        registered = true
     }
 
     fun unregister(context: Context) {

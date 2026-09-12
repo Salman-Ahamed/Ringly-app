@@ -13,7 +13,7 @@ class SyncScheduler(private val context: Context) {
     fun scheduleOneShot() {
         WorkManager.getInstance(context).enqueueUniqueWork(
             UNIQUE_ONE_SHOT,
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.KEEP,
             OneTimeWorkRequestBuilder<ContactSyncWorker>().build()
         )
     }
