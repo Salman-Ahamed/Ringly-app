@@ -5,4 +5,7 @@
     <string name="status_registering">Registering…</string>
     <string name="status_registered_format">Registered: %1$s</string>
     <string name="status_register_failed">Register failed — check connection</string>
+    <string name="overlay_enable_button">Enable caller ID overlay</string>
+    <string name="overlay_status_enabled">Caller ID overlay: enabled</string>
+    <string name="overlay_status_needs_permission">Caller ID overlay: grant Display over other apps</string>
 </resources>

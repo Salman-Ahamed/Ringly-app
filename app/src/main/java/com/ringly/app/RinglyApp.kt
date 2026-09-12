@@ -10,6 +10,7 @@ import androidx.work.Configuration
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
+import com.ringly.app.call.PhoneStateMonitor
 import com.ringly.app.data.session.SessionManager
 import com.ringly.app.data.session.SharedPreferencesUserSessionStorage
 import com.ringly.app.sync.ContactChangeObserver
@@ -53,12 +54,19 @@ class RinglyApp : Application(), Configuration.Provider {
         ContactChangeObserver(onContactsChanged = { syncScheduler.scheduleOneShot() })
     }
 
+    private val phoneStateMonitor: PhoneStateMonitor by lazy { PhoneStateMonitor(this) }
+
     override fun onCreate() {
         super.onCreate()
         observeLifecycle()
         observeContactChanges()
+        phoneStateMonitor.register()
         syncScheduler.schedulePeriodic()
         syncScheduler.scheduleOneShot()
+    }
+
+    fun refreshCallMonitoring() {
+        phoneStateMonitor.register()
     }
 
     private fun observeLifecycle() {
@@ -66,6 +74,7 @@ class RinglyApp : Application(), Configuration.Provider {
             override fun onStart(owner: LifecycleOwner) {
                 syncScheduler.scheduleOneShot()
                 observeContactChanges()
+                phoneStateMonitor.register()
             }
         })
     }
