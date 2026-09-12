@@ -5,7 +5,8 @@ import retrofit2.Response
 
 data class ApiError(
     val error: String,
-    val details: String? = null
+    val details: String? = null,
+    val statusCode: Int? = null
 ) : Exception(error) {
 
     companion object {
@@ -22,12 +23,12 @@ data class ApiError(
                 val parsed = gson.fromJson(body, ErrorBody::class.java)
                 val message = parsed?.error?.takeIf { it.isNotBlank() }
                 when {
-                    message != null -> ApiError(message, parsed.details)
-                    body.isBlank() -> ApiError("Request failed (HTTP ${response.code()})")
-                    else -> ApiError("Request failed (HTTP ${response.code()})", body.take(300))
+                    message != null -> ApiError(message, parsed.details, response.code())
+                    body.isBlank() -> ApiError("Request failed (HTTP ${response.code()})", null, response.code())
+                    else -> ApiError("Request failed (HTTP ${response.code()})", body.take(300), response.code())
                 }
             } catch (e: Exception) {
-                ApiError("Unexpected error (HTTP ${response.code()})", body.take(300))
+                ApiError("Unexpected error (HTTP ${response.code()})", body.take(300), response.code())
             }
         }
     }

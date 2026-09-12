@@ -28,3 +28,7 @@ data class ContactDto(
     val photoPublicId: String? = null,
     val ownerId: String? = null
 )
+
+data class ListContactsResponse(
+    val contacts: List<ContactDto>
+)

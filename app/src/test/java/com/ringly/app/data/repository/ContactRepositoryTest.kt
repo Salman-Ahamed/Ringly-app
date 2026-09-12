@@ -90,6 +90,52 @@ class ContactRepositoryTest {
     }
 
     @Test
+    fun `listMyContacts returns contacts`() = runBlocking {
+        server.enqueue(
+            MockResponse().setResponseCode(200).setBody(
+                """
+                {"contacts":[{"_id":"c1","number":"+8801712345678","name":"Rahim",
+                "photoUrl":null,"ownerId":"u1"}]}
+                """.trimIndent()
+            )
+        )
+
+        val result = repository.listMyContacts("u1")
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, result.getOrNull()?.contacts?.size)
+        assertEquals("c1", result.getOrNull()?.contacts?.firstOrNull()?.id)
+        assertEquals("u1", result.getOrNull()?.contacts?.firstOrNull()?.ownerId)
+    }
+
+    @Test
+    fun `listMyContacts maps 404 user missing to ApiError`() = runBlocking {
+        server.enqueue(
+            MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_FOUND)
+                .setBody("""{"error":"User not found"}""")
+        )
+
+        val result = repository.listMyContacts("missing")
+
+        assertTrue(result.isFailure)
+        assertEquals("User not found", (result.exceptionOrNull() as? ApiError)?.error)
+    }
+
+    @Test
+    fun `sync maps 404 user missing to ApiError`() = runBlocking {
+        server.enqueue(
+            MockResponse().setResponseCode(HttpURLConnection.HTTP_NOT_FOUND)
+                .setBody("""{"error":"User not found"}""")
+        )
+
+        val result = repository.sync("missing", listOf(SyncContact(number = "01712345678", name = "Rahim")))
+
+        assertTrue(result.isFailure)
+        assertEquals("User not found", (result.exceptionOrNull() as? ApiError)?.error)
+        assertEquals(HttpURLConnection.HTTP_NOT_FOUND, (result.exceptionOrNull() as? ApiError)?.statusCode)
+    }
+
+    @Test
     fun `uploadPhoto returns cloudinary url`() = runBlocking {
         server.enqueue(
             MockResponse().setResponseCode(200).setBody(
@@ -141,5 +187,37 @@ class ContactRepositoryTest {
 
         assertTrue(result.isFailure)
         assertEquals("Contact not found", (result.exceptionOrNull() as? ApiError)?.error)
+    }
+
+    @Test
+    fun `uploadPhoto maps 413 too large to ApiError`() = runBlocking {
+        server.enqueue(
+            MockResponse().setResponseCode(413)
+                .setBody("""{"error":"Image is too large"}""")
+        )
+
+        val result = repository.uploadPhoto("data:image/jpeg;base64,XXXX")
+
+        assertTrue(result.isFailure)
+        val error = result.exceptionOrNull() as? ApiError
+        assertNotNull(error)
+        assertEquals(413, error?.statusCode)
+        assertEquals("Image is too large", error?.error)
+    }
+
+    @Test
+    fun `listMyContacts maps 400 missing userId to ApiError`() = runBlocking {
+        server.enqueue(
+            MockResponse().setResponseCode(400)
+                .setBody("""{"error":"userId query param missing"}""")
+        )
+
+        val result = repository.listMyContacts("")
+
+        assertTrue(result.isFailure)
+        val error = result.exceptionOrNull() as? ApiError
+        assertNotNull(error)
+        assertEquals(400, error?.statusCode)
+        assertEquals("userId query param missing", error?.error)
     }
 }

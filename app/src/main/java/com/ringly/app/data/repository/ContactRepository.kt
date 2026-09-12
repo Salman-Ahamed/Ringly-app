@@ -4,6 +4,7 @@ import com.ringly.app.data.ApiClient
 import com.ringly.app.data.ApiService
 import com.ringly.app.data.models.ApiError
 import com.ringly.app.data.models.DeleteResponse
+import com.ringly.app.data.models.ListContactsResponse
 import com.ringly.app.data.models.LookupResponse
 import com.ringly.app.data.models.SyncContact
 import com.ringly.app.data.models.SyncRequest
@@ -36,6 +37,21 @@ class ContactRepository(private val api: ApiService = ApiClient.api) {
                 response.isSuccessful && body != null -> Result.success(body)
                 else -> Result.failure(
                     ApiError.from(response) ?: ApiError("Lookup failed (HTTP ${response.code()})")
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun listMyContacts(userId: String): Result<ListContactsResponse> {
+        return try {
+            val response = api.listMyContacts(userId)
+            val body = response.body()
+            when {
+                response.isSuccessful && body != null -> Result.success(body)
+                else -> Result.failure(
+                    ApiError.from(response) ?: ApiError("Fetch contacts failed (HTTP ${response.code()})")
                 )
             }
         } catch (e: Exception) {

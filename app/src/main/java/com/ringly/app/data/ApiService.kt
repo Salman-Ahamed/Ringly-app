@@ -1,6 +1,7 @@
 package com.ringly.app.data
 
 import com.ringly.app.data.models.DeleteResponse
+import com.ringly.app.data.models.ListContactsResponse
 import com.ringly.app.data.models.LookupResponse
 import com.ringly.app.data.models.RegisterRequest
 import com.ringly.app.data.models.RegisterResponse
@@ -29,6 +30,9 @@ interface ApiService {
 
     @GET("contacts/lookup/{number}")
     suspend fun lookup(@Path("number") number: String): Response<LookupResponse>
+
+    @GET("contacts")
+    suspend fun listMyContacts(@Query("userId") userId: String): Response<ListContactsResponse>
 
     @DELETE("contacts/{contactId}")
     suspend fun deleteContact(
