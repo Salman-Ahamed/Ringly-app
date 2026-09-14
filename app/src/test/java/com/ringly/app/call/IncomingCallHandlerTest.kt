@@ -156,4 +156,22 @@ class IncomingCallHandlerTest {
         IncomingCallHandler.onRing("01711234567")
         IncomingCallHandler.onStateChange(IncomingCallPhase.DISCONNECTED, null)
     }
+
+    @Test
+    fun `same number ring after dedupe window with stale session dispatches as new call`() {
+        var now = 0L
+        IncomingCallHandler.ringDedupe = RingDedupe(clock = { now })
+        val events = capture()
+        IncomingCallHandler.onRing("01710987654")
+        now = 10_000
+        IncomingCallHandler.onRing("01710987654")
+        assertEquals(2, events.count { it.phase == IncomingCallPhase.RINGING })
+    }
+
+    @Test
+    fun `ringing source is surfaced on dispatch`() {
+        val events = capture()
+        IncomingCallHandler.onRing("01710987654", "SCREENING")
+        assertEquals(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710987654"), events.single())
+    }
 }

@@ -56,11 +56,11 @@ class PhoneStateMonitor(private val context: Context) {
     private fun onPhoneState(state: Int, incomingNumber: String?) {
         when (state) {
             TelephonyManager.CALL_STATE_RINGING ->
-                IncomingCallHandler.onRing(incomingNumber)
+                IncomingCallHandler.onRing(incomingNumber, SOURCE_LISTENER)
             TelephonyManager.CALL_STATE_OFFHOOK ->
-                IncomingCallHandler.onStateChange(IncomingCallPhase.ACTIVE, null)
+                IncomingCallHandler.onStateChange(IncomingCallPhase.ACTIVE, null, SOURCE_LISTENER)
             TelephonyManager.CALL_STATE_IDLE ->
-                IncomingCallHandler.onStateChange(IncomingCallPhase.DISCONNECTED, null)
+                IncomingCallHandler.onStateChange(IncomingCallPhase.DISCONNECTED, null, SOURCE_LISTENER)
         }
     }
 
@@ -78,5 +78,6 @@ class PhoneStateMonitor(private val context: Context) {
 
     private companion object {
         const val TAG = "RingCall"
+        const val SOURCE_LISTENER = "LISTENER"
     }
 }
