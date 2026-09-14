@@ -8,4 +8,6 @@
     <string name="overlay_enable_button">Enable caller ID overlay</string>
     <string name="overlay_status_enabled">Caller ID overlay: enabled</string>
     <string name="overlay_status_needs_permission">Caller ID overlay: grant Display over other apps</string>
+    <string name="overlay_incoming_call">Incoming call</string>
+    <string name="overlay_saved_by_format">Saved by %1$s</string>
 </resources>

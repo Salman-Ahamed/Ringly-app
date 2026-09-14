@@ -11,12 +11,19 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import com.ringly.app.call.PhoneStateMonitor
+import com.ringly.app.data.repository.ContactRepository
 import com.ringly.app.data.session.SessionManager
 import com.ringly.app.data.session.SharedPreferencesUserSessionStorage
+import com.ringly.app.overlay.CallerIdOverlayController
+import com.ringly.app.overlay.CallerIdOverlayView
 import com.ringly.app.sync.ContactChangeObserver
 import com.ringly.app.sync.ContactSyncWorker
+import com.ringly.app.sync.SharedPreferencesSyncSnapshotStorage
 import com.ringly.app.sync.SyncScheduler
 import com.ringly.app.util.PermissionHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class RinglyApp : Application(), Configuration.Provider {
 
@@ -56,11 +63,23 @@ class RinglyApp : Application(), Configuration.Provider {
 
     private val phoneStateMonitor: PhoneStateMonitor by lazy { PhoneStateMonitor(this) }
 
+    private val overlayController: CallerIdOverlayController by lazy {
+        val snapshotStorage = SharedPreferencesSyncSnapshotStorage(this)
+        CallerIdOverlayController(
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+            lookup = { ContactRepository().lookup(it) },
+            localNumbers = { snapshotStorage.load().entries.keys },
+            canShowOverlay = { PermissionHelper.canDrawOverlays(this) },
+            renderer = CallerIdOverlayView(this)
+        )
+    }
+
     override fun onCreate() {
         super.onCreate()
         observeLifecycle()
         observeContactChanges()
         phoneStateMonitor.register()
+        overlayController.start()
         syncScheduler.schedulePeriodic()
         syncScheduler.scheduleOneShot()
     }
