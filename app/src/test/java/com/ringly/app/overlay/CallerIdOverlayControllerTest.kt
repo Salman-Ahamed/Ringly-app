@@ -5,8 +5,9 @@ import com.ringly.app.call.IncomingCallPhase
 import com.ringly.app.data.models.LookupMatch
 import com.ringly.app.data.models.LookupResponse
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -34,123 +35,171 @@ class CallerIdOverlayControllerTest {
         }
     }
 
+    private class FakeFallback : CallerIdFallback {
+        val unknownShown = mutableListOf<String>()
+        val matchesShown = mutableListOf<LookupMatch>()
+        private var active = false
+        private var hiddenWhileActive = false
+
+        override fun showUnknown(number: String) {
+            unknownShown += number
+            active = true
+        }
+
+        override fun showMatch(match: LookupMatch, number: String) {
+            matchesShown += match
+            active = true
+        }
+
+        override fun hide() {
+            if (active) {
+                active = false
+                hiddenWhileActive = true
+            }
+        }
+
+        fun isHiddenAfterShow(): Boolean = hiddenWhileActive
+    }
+
+    private fun controller(
+        scope: CoroutineScope,
+        renderer: OverlayRenderer,
+        fallback: CallerIdFallback,
+        lookup: suspend (String) -> Result<LookupResponse>,
+        localNumbers: () -> Set<String> = { emptySet() },
+        canShowOverlay: () -> Boolean = { true },
+        overlayTimeoutMillis: Long = 60_000L,
+        log: (String) -> Unit = {}
+    ) = CallerIdOverlayController(
+        scope = scope,
+        lookup = lookup,
+        localNumbers = localNumbers,
+        canShowOverlay = canShowOverlay,
+        renderer = renderer,
+        fallback = fallback,
+        overlayTimeoutMillis = overlayTimeoutMillis,
+        log = log
+    )
+
     @Test
-    fun `ring with overlay permission denied skips lookup`() = runTest {
-        var lookupCalls = 0
+    fun `ring with overlay permission denied still looks up and notifies match`() = runTest {
+        val lookupCalls = mutableListOf<String>()
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
-            lookup = { lookupCalls += 1; Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) },
-            localNumbers = { emptySet() },
-            canShowOverlay = { false },
             renderer = renderer,
-            log = {}
+            fallback = fallback,
+            lookup = { lookupCalls += it; Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) },
+            canShowOverlay = { false }
         )
 
         val number = "+8801710000001"
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
-        advanceUntilIdle()
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
+        runCurrent()
 
-        assertEquals(0, lookupCalls)
+        assertEquals(listOf(number), lookupCalls)
         assertTrue(renderer.shown.isEmpty())
+        assertEquals(listOf(photoMatch()), fallback.matchesShown)
+        assertTrue(fallback.unknownShown.isEmpty())
     }
 
     @Test
     fun `ring with number in local contacts skips lookup`() = runTest {
-        var lookupCalls = 0
+        val lookupCalls = mutableListOf<String>()
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
-            lookup = { lookupCalls += 1; Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) },
-            localNumbers = { setOf("+8801710000001") },
-            canShowOverlay = { true },
             renderer = renderer,
-            log = {}
+            fallback = fallback,
+            lookup = { lookupCalls += it; Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) },
+            localNumbers = { setOf("+8801710000001") }
         )
 
-        val number = "+8801710000001"
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
-        advanceUntilIdle()
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        runCurrent()
 
-        assertEquals(0, lookupCalls)
+        assertTrue(lookupCalls.isEmpty())
         assertTrue(renderer.shown.isEmpty())
+        assertTrue(fallback.unknownShown.isEmpty())
+        assertTrue(fallback.matchesShown.isEmpty())
     }
 
     @Test
-    fun `ring not local with pool match shows best photo match`() = runTest {
+    fun `ring not local with pool match shows best photo match via overlay`() = runTest {
         val noPhoto = LookupMatch("Rahim Uddin", photoUrl = null, ownerName = "Karim")
         val withPhoto = LookupMatch("Rahim", photoUrl = "https://example.com/a.jpg", ownerName = "Salman")
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
-            lookup = { Result.success(LookupResponse(found = true, matches = listOf(noPhoto, withPhoto))) },
-            localNumbers = { emptySet() },
-            canShowOverlay = { true },
             renderer = renderer,
-            log = {}
+            fallback = fallback,
+            lookup = { Result.success(LookupResponse(found = true, matches = listOf(noPhoto, withPhoto))) },
+            canShowOverlay = { true }
         )
 
-        val number = "+8801710000001"
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
-        advanceUntilIdle()
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        runCurrent()
 
         assertEquals(listOf(withPhoto), renderer.shown)
+        assertTrue(fallback.matchesShown.isEmpty())
     }
 
     @Test
-    fun `ring not found shows nothing`() = runTest {
+    fun `ring not found falls back to unknown notification`() = runTest {
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
-            lookup = { Result.success(LookupResponse(found = false, matches = emptyList())) },
-            localNumbers = { emptySet() },
-            canShowOverlay = { true },
             renderer = renderer,
-            log = {}
+            fallback = fallback,
+            lookup = { Result.success(LookupResponse(found = false, matches = emptyList())) }
         )
 
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
-        advanceUntilIdle()
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        runCurrent()
 
         assertTrue(renderer.shown.isEmpty())
+        assertEquals(listOf("+8801710000001"), fallback.unknownShown)
     }
 
     @Test
-    fun `lookup failure shows nothing`() = runTest {
+    fun `lookup failure falls back to unknown notification`() = runTest {
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
-            lookup = { Result.failure(RuntimeException("network down")) },
-            localNumbers = { emptySet() },
-            canShowOverlay = { true },
             renderer = renderer,
-            log = {}
+            fallback = fallback,
+            lookup = { Result.failure(RuntimeException("network down")) }
         )
 
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
-        advanceUntilIdle()
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        runCurrent()
 
         assertTrue(renderer.shown.isEmpty())
+        assertEquals(listOf("+8801710000001"), fallback.unknownShown)
     }
 
     @Test
     fun `disconnect dismisses shown overlay`() = runTest {
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
-            lookup = { Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) },
-            localNumbers = { emptySet() },
-            canShowOverlay = { true },
             renderer = renderer,
-            log = {}
+            fallback = fallback,
+            lookup = { Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) }
         )
 
         val number = "+8801710000001"
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
-        advanceUntilIdle()
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
+        runCurrent()
         assertEquals(1, renderer.shown.size)
 
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.DISCONNECTED, null))
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.DISCONNECTED, null))
         assertEquals(1, renderer.dismissCount)
     }
 
@@ -159,28 +208,28 @@ class CallerIdOverlayControllerTest {
         val deferred = CompletableDeferred<Result<LookupResponse>>()
         var lookupStarted = false
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
+            renderer = renderer,
+            fallback = fallback,
             lookup = {
                 lookupStarted = true
                 deferred.await()
-            },
-            localNumbers = { emptySet() },
-            canShowOverlay = { true },
-            renderer = renderer,
-            log = {}
+            }
         )
 
         val number = "+8801710000001"
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, number))
         runCurrent()
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.DISCONNECTED, null))
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.DISCONNECTED, null))
         deferred.complete(Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))))
-        advanceUntilIdle()
+        runCurrent()
 
         assertTrue(lookupStarted)
         assertTrue(renderer.shown.isEmpty())
         assertEquals(0, renderer.dismissCount)
+        assertTrue(!fallback.isHiddenAfterShow())
     }
 
     @Test
@@ -188,36 +237,78 @@ class CallerIdOverlayControllerTest {
         val firstDeferred = CompletableDeferred<Result<LookupResponse>>()
         var firstLookupStarted = false
         val secondMatch = LookupMatch("Second", photoUrl = null, ownerName = "Salman")
-        var firstLookupCalls = 0
+        val firstLookupCalls = mutableListOf<String>()
         val renderer = FakeRenderer()
-        val controller = CallerIdOverlayController(
+        val fallback = FakeFallback()
+        val c = controller(
             scope = this,
+            renderer = renderer,
+            fallback = fallback,
             lookup = { number ->
                 if (number == "+8801710000001") {
-                    firstLookupCalls += 1
+                    firstLookupCalls += number
                     firstLookupStarted = true
                     firstDeferred.await()
                 } else {
                     Result.success(LookupResponse(found = true, matches = listOf(secondMatch)))
                 }
-            },
-            localNumbers = { emptySet() },
-            canShowOverlay = { true },
-            renderer = renderer,
-            log = {}
+            }
         )
 
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
         runCurrent()
-        controller.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000002"))
-        advanceUntilIdle()
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000002"))
+        runCurrent()
 
         firstDeferred.complete(Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))))
-        advanceUntilIdle()
+        runCurrent()
 
         assertTrue(firstLookupStarted)
-        assertEquals(1, firstLookupCalls)
+        assertEquals(1, firstLookupCalls.size)
         assertEquals(listOf(secondMatch), renderer.shown)
+        assertTrue(fallback.matchesShown.isEmpty())
+    }
+
+    @Test
+    fun `stale overlay auto-dismisses after timeout even without end event`() = runTest {
+        val renderer = FakeRenderer()
+        val fallback = FakeFallback()
+        val c = controller(
+            scope = this,
+            renderer = renderer,
+            fallback = fallback,
+            lookup = { Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) },
+            overlayTimeoutMillis = 1_000L
+        )
+
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        runCurrent()
+        assertEquals(1, renderer.shown.size)
+
+        advanceTimeBy(1_001)
+        runCurrent()
+
+        assertEquals(1, renderer.dismissCount)
+    }
+
+    @Test
+    fun `notification fallback for unknown hides on end`() = runTest {
+        val renderer = FakeRenderer()
+        val fallback = FakeFallback()
+        val c = controller(
+            scope = this,
+            renderer = renderer,
+            fallback = fallback,
+            lookup = { Result.success(LookupResponse(found = false, matches = emptyList())) }
+        )
+
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        runCurrent()
+        assertEquals(listOf("+8801710000001"), fallback.unknownShown)
+
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.DISCONNECTED, null))
+        assertTrue(fallback.isHiddenAfterShow())
+        assertTrue(renderer.shown.isEmpty())
     }
 
     private fun photoMatch() = LookupMatch("Rahim", photoUrl = "https://example.com/rahim.jpg", ownerName = "Salman")

@@ -22,10 +22,10 @@ class CallerIdOverlayView(private val context: Context) : OverlayRenderer {
     private var cardView: View? = null
 
     override fun show(match: LookupMatch, number: String) {
-        val existing = cardView
-        if (existing != null) {
-            SyncLog.d(TAG, "overlay already visible — refreshing")
-            removeView(existing)
+        cardView?.let { old ->
+            old.animate().cancel()
+            old.clearAnimation()
+            removeView(old)
         }
         val view = buildView(match, number)
         addView(view)
@@ -39,7 +39,6 @@ class CallerIdOverlayView(private val context: Context) : OverlayRenderer {
                 .withEndAction { removeView(view) }
                 .start()
         }
-        cardView = null
     }
 
     private fun buildView(match: LookupMatch, number: String): View {

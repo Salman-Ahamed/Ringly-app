@@ -9,6 +9,7 @@ import com.ringly.app.data.models.LookupResponse
 import com.ringly.app.sync.SyncLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CallerIdOverlayController(
@@ -17,63 +18,79 @@ class CallerIdOverlayController(
     private val localNumbers: () -> Set<String>,
     private val canShowOverlay: () -> Boolean,
     private val renderer: OverlayRenderer,
+    private val fallback: CallerIdFallback = NoOpCallerIdFallback,
     private val selectBest: (List<LookupMatch>) -> LookupMatch? = BestMatchSelector::selectBest,
+    private val overlayTimeoutMillis: Long = STALE_OVERLAY_TIMEOUT_MILLIS,
     private val log: (String) -> Unit = { SyncLog.d(TAG, it) }
 ) : IncomingCallListener {
 
-    private var lookupJob: Job? = null
+    private var job: Job? = null
 
     fun start() {
         IncomingCallNotifier.listener = this
     }
 
     fun stop() {
-        lookupJob?.cancel()
-        lookupJob = null
+        endCall()
         if (IncomingCallNotifier.listener === this) IncomingCallNotifier.listener = null
     }
 
     override fun onCallEvent(event: IncomingCallEvent) {
         when (event.phase) {
             IncomingCallPhase.RINGING -> event.number?.let { handleRing(it) }
-            IncomingCallPhase.ACTIVE, IncomingCallPhase.DISCONNECTED -> handleEnd()
+            IncomingCallPhase.ACTIVE, IncomingCallPhase.DISCONNECTED -> endCall()
         }
     }
 
     private fun handleRing(number: String) {
-        if (!canShowOverlay()) {
-            log("skip: overlay permission unavailable")
-            return
-        }
         if (localNumbers().contains(number)) {
             log("skip: $number is a local contact")
             return
         }
-        lookupJob?.cancel()
-        renderer.dismiss()
-        lookupJob = scope.launch {
-            val result = runCatching { lookup(number) }.getOrElse { Result.failure(it) }
-            val response = result.getOrNull()
+        job?.cancel()
+        endCall()
+        job = scope.launch {
+            val response = runCatching { lookup(number) }.getOrElse { Result.failure(it) }.getOrNull()
             val match = response
                 ?.takeIf { it.found }
                 ?.matches
                 ?.let(selectBest)
-            if (match == null) {
-                log("skip: no pool match for $number")
-                return@launch
+            when {
+                match == null -> {
+                    log("no pool match for $number -> notification fallback")
+                    fallback.showUnknown(number)
+                    scheduleTimeout()
+                }
+                canShowOverlay() -> {
+                    log("pool match for $number -> ${match.name} (owner ${match.ownerName})")
+                    renderer.show(match, number)
+                    scheduleTimeout()
+                }
+                else -> {
+                    log("pool match for $number but overlay permission missing -> notification fallback")
+                    fallback.showMatch(match, number)
+                    scheduleTimeout()
+                }
             }
-            log("pool match for $number -> ${match.name} (owner ${match.ownerName})")
-            renderer.show(match, number)
         }
     }
 
-    private fun handleEnd() {
-        lookupJob?.cancel()
-        lookupJob = null
+    private fun scheduleTimeout() {
+        job = scope.launch {
+            delay(overlayTimeoutMillis)
+            endCall()
+        }
+    }
+
+    private fun endCall() {
+        job?.cancel()
+        job = null
         renderer.dismiss()
+        fallback.hide()
     }
 
     companion object {
         private const val TAG = "RinglyOverlay"
+        const val STALE_OVERLAY_TIMEOUT_MILLIS = 5 * 60 * 1000L
     }
 }

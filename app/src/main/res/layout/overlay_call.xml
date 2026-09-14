@@ -38,6 +38,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:ellipsize="end"
+        android:maxLines="1"
         android:maxWidth="280dp"
         android:textColor="#1A1A2E"
         android:textSize="28sp"
@@ -48,6 +50,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:maxWidth="280dp"
         android:textColor="#666666"
         android:textSize="14sp" />
 
@@ -56,6 +61,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:maxWidth="280dp"
         android:textColor="#999999"
         android:textSize="12sp" />
 

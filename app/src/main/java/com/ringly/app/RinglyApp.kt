@@ -14,6 +14,7 @@ import com.ringly.app.call.PhoneStateMonitor
 import com.ringly.app.data.repository.ContactRepository
 import com.ringly.app.data.session.SessionManager
 import com.ringly.app.data.session.SharedPreferencesUserSessionStorage
+import com.ringly.app.overlay.CallerIdNotificationFallback
 import com.ringly.app.overlay.CallerIdOverlayController
 import com.ringly.app.overlay.CallerIdOverlayView
 import com.ringly.app.sync.ContactChangeObserver
@@ -70,7 +71,8 @@ class RinglyApp : Application(), Configuration.Provider {
             lookup = { ContactRepository().lookup(it) },
             localNumbers = { snapshotStorage.load().entries.keys },
             canShowOverlay = { PermissionHelper.canDrawOverlays(this) },
-            renderer = CallerIdOverlayView(this)
+            renderer = CallerIdOverlayView(this),
+            fallback = CallerIdNotificationFallback(this)
         )
     }
 

@@ -19,6 +19,9 @@ class MainActivity : AppCompatActivity() {
             if (granted) (application as RinglyApp).refreshCallMonitoring()
         }
 
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -32,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         }
         updateOverlayStatus()
         requestPhonePermissionIfNeeded()
+        requestNotificationPermissionIfNeeded()
 
         val statusText = findViewById<TextView>(R.id.status_text)
         val session = (application as RinglyApp).sessionManager
@@ -61,6 +65,14 @@ class MainActivity : AppCompatActivity() {
     private fun requestPhonePermissionIfNeeded() {
         if (!PermissionHelper.hasPermission(this, Manifest.permission.READ_PHONE_STATE)) {
             phonePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE)
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            !PermissionHelper.hasPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
