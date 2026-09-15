@@ -37,7 +37,7 @@ class CallerIdNotificationFallback(private val context: Context) : CallerIdFallb
     }
 
     override fun hide() {
-        notificationManager.cancel(NOTIFICATION_ID)
+        runCatching { notificationManager.cancel(NOTIFICATION_ID) }
     }
 
     private fun show(title: String, text: String) {
@@ -65,7 +65,8 @@ class CallerIdNotificationFallback(private val context: Context) : CallerIdFallb
             .setOngoing(true)
             .setContentIntent(contentIntent)
             .build()
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        runCatching { notificationManager.notify(NOTIFICATION_ID, notification) }
+            .onFailure { SyncLog.w(TAG, "notification failed: ${it.message}") }
     }
 
     private fun ensureChannel() {
@@ -78,7 +79,8 @@ class CallerIdNotificationFallback(private val context: Context) : CallerIdFallb
             description = context.getString(R.string.caller_id_channel_desc)
             setShowBadge(false)
         }
-        notificationManager.createNotificationChannel(channel)
+        runCatching { notificationManager.createNotificationChannel(channel) }
+            .onFailure { SyncLog.w(TAG, "createNotificationChannel failed: ${it.message}") }
         channelInitialized = true
     }
 

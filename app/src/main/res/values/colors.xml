@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#1565C0</color>
+    <color name="brand_primary">#1565C0</color>
+    <color name="brand_secondary">#00897B</color>
+    <color name="call_green">#2E7D32</color>
+    <color name="danger_red">#C62828</color>
+    <color name="warning_amber">#F9A825</color>
+    <color name="background_gray">#F5F7FA</color>
+    <color name="text_navy">#1A1A2E</color>
+    <color name="text_caption_gray">#616161</color>
 </resources>

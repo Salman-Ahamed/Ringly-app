@@ -34,6 +34,14 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".dialer.DialerActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".dialer.ContactListActivity"
+            android:exported="false" />
+
         <service
             android:name=".call.CallScreeningService"
             android:exported="true"

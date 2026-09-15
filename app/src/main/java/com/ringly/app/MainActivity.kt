@@ -1,6 +1,7 @@
 package com.ringly.app
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
@@ -8,6 +9,8 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.ringly.app.dialer.ContactListActivity
+import com.ringly.app.dialer.DialerActivity
 import com.ringly.app.util.DeviceIdManager
 import com.ringly.app.util.PermissionHelper
 import kotlinx.coroutines.launch
@@ -36,6 +39,13 @@ class MainActivity : AppCompatActivity() {
         updateOverlayStatus()
         requestPhonePermissionIfNeeded()
         requestNotificationPermissionIfNeeded()
+
+        findViewById<Button>(R.id.dialer_button).setOnClickListener {
+            startActivity(Intent(this, DialerActivity::class.java))
+        }
+        findViewById<Button>(R.id.contacts_button).setOnClickListener {
+            startActivity(Intent(this, ContactListActivity::class.java))
+        }
 
         val statusText = findViewById<TextView>(R.id.status_text)
         val session = (application as RinglyApp).sessionManager

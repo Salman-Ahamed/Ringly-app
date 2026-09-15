@@ -5,12 +5,14 @@ import com.ringly.app.data.ApiService
 import com.ringly.app.data.models.ApiError
 import com.ringly.app.data.models.DeleteResponse
 import com.ringly.app.data.models.ListContactsResponse
+import com.ringly.app.data.models.ListPoolContactsResponse
 import com.ringly.app.data.models.LookupResponse
 import com.ringly.app.data.models.SyncContact
 import com.ringly.app.data.models.SyncRequest
 import com.ringly.app.data.models.SyncResponse
 import com.ringly.app.data.models.UploadRequest
 import com.ringly.app.data.models.UploadResponse
+import kotlinx.coroutines.CancellationException
 
 class ContactRepository(private val api: ApiService = ApiClient.api) {
 
@@ -39,6 +41,25 @@ class ContactRepository(private val api: ApiService = ApiClient.api) {
                     ApiError.from(response) ?: ApiError("Lookup failed (HTTP ${response.code()})")
                 )
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun listPoolContacts(userId: String): Result<ListPoolContactsResponse> {
+        return try {
+            val response = api.listPoolContacts(userId)
+            val body = response.body()
+            when {
+                response.isSuccessful && body != null -> Result.success(body)
+                else -> Result.failure(
+                    ApiError.from(response) ?: ApiError("Fetch pool contacts failed (HTTP ${response.code()})")
+                )
+            }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

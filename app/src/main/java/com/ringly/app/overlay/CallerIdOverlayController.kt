@@ -7,6 +7,7 @@ import com.ringly.app.call.IncomingCallPhase
 import com.ringly.app.data.models.LookupMatch
 import com.ringly.app.data.models.LookupResponse
 import com.ringly.app.sync.SyncLog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -50,7 +51,13 @@ class CallerIdOverlayController(
         job?.cancel()
         endCall()
         job = scope.launch {
-            val response = runCatching { lookup(number) }.getOrElse { Result.failure(it) }.getOrNull()
+            val response = try {
+                lookup(number)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }.getOrNull()
             val match = response
                 ?.takeIf { it.found }
                 ?.matches

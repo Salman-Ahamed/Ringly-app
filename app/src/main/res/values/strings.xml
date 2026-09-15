@@ -12,4 +12,23 @@
     <string name="overlay_saved_by_format">Saved by %1$s</string>
     <string name="caller_id_channel_name">Caller ID</string>
     <string name="caller_id_channel_desc">Shows who is calling when the overlay can\'t be shown</string>
+
+    <string name="dialer_button">Dialer</string>
+    <string name="contacts_button">Contacts</string>
+    <string name="dialer_title">Dial</string>
+    <string name="dialer_delete">Delete</string>
+    <string name="dialer_call">Call</string>
+    <string name="dialer_digits_hint">Enter number</string>
+    <string name="dialer_lookup_saved_by_format">Saved by %1$s</string>
+    <string name="dialer_no_suggestion_hint" />
+    <string name="dialer_call_permission_needed">Call permission needed to place calls</string>
+    <string name="contacts_title">Contacts</string>
+    <string name="contacts_search_hint">Search name or number</string>
+    <string name="contacts_filter_all">All</string>
+    <string name="contacts_filter_local">Local</string>
+    <string name="contacts_filter_pool">Shared pool</string>
+    <string name="contacts_empty">No contacts synced yet</string>
+    <string name="contacts_loading">Loading contacts…</string>
+    <string name="contacts_error">Could not load contacts</string>
+    <string name="contacts_retry">Retry</string>
 </resources>
