@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#1565C0</color>
+
     <color name="brand_primary">#1565C0</color>
+    <color name="brand_primary_dark">#1976D2</color>
     <color name="brand_secondary">#00897B</color>
     <color name="call_green">#2E7D32</color>
     <color name="danger_red">#C62828</color>
@@ -9,4 +11,27 @@
     <color name="background_gray">#F5F7FA</color>
     <color name="text_navy">#1A1A2E</color>
     <color name="text_caption_gray">#616161</color>
+
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimaryContainer">#D6E4FF</color>
+    <color name="colorOnPrimaryContainer">#003C8F</color>
+
+    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorSecondaryContainer">#B2DFDB</color>
+    <color name="colorOnSecondaryContainer">#00363A</color>
+
+    <color name="surface">#FFFFFF</color>
+    <color name="colorOnSurface">#1A1A2E</color>
+    <color name="colorSurfaceVariant">#E8EAF0</color>
+    <color name="colorOnSurfaceVariant">#44474F</color>
+
+    <color name="colorOutline">#9E9E9E</color>
+    <color name="colorError">#C62828</color>
+    <color name="colorOnError">#FFFFFF</color>
+    <color name="colorErrorContainer">#F9DEDC</color>
+    <color name="colorOnErrorContainer">#410002</color>
+
+    <color name="granted_green">#2E7D32</color>
+    <color name="denied_amber">#F9A825</color>
+    <color name="denied_text">#8A5A00</color>
 </resources>

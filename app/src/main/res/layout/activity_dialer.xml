@@ -12,9 +12,7 @@
         android:layout_marginStart="20dp"
         android:layout_marginTop="16dp"
         android:text="@string/dialer_title"
-        android:textColor="@color/text_navy"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        style="@style/TextAppearance.Ringly.Title" />
 
     <TextView
         android:id="@+id/digits_text"

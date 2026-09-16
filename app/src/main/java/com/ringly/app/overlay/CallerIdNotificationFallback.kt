@@ -61,6 +61,7 @@ class CallerIdNotificationFallback(private val context: Context) : CallerIdFallb
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setSilent(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setContentIntent(contentIntent)

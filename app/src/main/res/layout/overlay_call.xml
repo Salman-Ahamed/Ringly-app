@@ -53,7 +53,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:maxWidth="280dp"
-        android:textColor="#666666"
+        android:textColor="@color/text_caption_gray"
         android:textSize="14sp" />
 
     <TextView
@@ -64,7 +64,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:maxWidth="280dp"
-        android:textColor="#999999"
+        android:textColor="@color/text_caption_gray"
         android:textSize="12sp" />
 
     <TextView
@@ -72,6 +72,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:textColor="#999999"
+        android:textColor="@color/text_caption_gray"
         android:textSize="12sp" />
 </LinearLayout>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Ringly</string>
+    <string name="app_tagline">Know who\'s calling</string>
     <string name="device_id_label_format">Device ID: %1$s</string>
     <string name="status_registering">Registering…</string>
     <string name="status_registered_format">Registered: %1$s</string>
@@ -20,7 +21,6 @@
     <string name="dialer_call">Call</string>
     <string name="dialer_digits_hint">Enter number</string>
     <string name="dialer_lookup_saved_by_format">Saved by %1$s</string>
-    <string name="dialer_no_suggestion_hint" />
     <string name="dialer_call_permission_needed">Call permission needed to place calls</string>
     <string name="contacts_title">Contacts</string>
     <string name="contacts_search_hint">Search name or number</string>
@@ -31,4 +31,62 @@
     <string name="contacts_loading">Loading contacts…</string>
     <string name="contacts_error">Could not load contacts</string>
     <string name="contacts_retry">Retry</string>
+
+    <string name="hub_setup">Setup</string>
+    <string name="hub_setup_subtitle">Permissions &amp; sync</string>
+    <string name="hub_status_synced">Synced %1$s</string>
+    <string name="hub_status_never_synced">Never synced</string>
+    <string name="hub_status_syncing">Syncing contacts…</string>
+    <string name="hub_status_sync_failed">Sync failed</string>
+    <string name="hub_status_registered">Registered</string>
+    <string name="hub_permissions_button">Permissions</string>
+    <string name="hub_sync">Contact sync</string>
+    <string name="hub_sync_button">Sync now</string>
+    <string name="hub_contacts_permission_granted">Contacts access: granted</string>
+    <string name="hub_contacts_permission_needed">Contacts access: needed for caller ID</string>
+    <string name="hub_phone_permission_granted">Phone access: granted</string>
+    <string name="hub_phone_permission_needed">Phone access: needed for call detection</string>
+    <string name="hub_overlay_permission_granted">Overlay: enabled</string>
+    <string name="hub_overlay_permission_needed">Overlay: needed for caller ID card</string>
+    <string name="hub_notifications_permission_granted">Notifications: granted</string>
+    <string name="hub_notifications_permission_needed">Notifications: needed for fallback</string>
+
+    <string name="onboarding_welcome_title">Ringly</string>
+    <string name="onboarding_welcome_subtitle">Know who\'s calling</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_name_title">What\'s your name?</string>
+    <string name="onboarding_name_hint">Your name</string>
+    <string name="onboarding_permissions_title">Permissions</string>
+    <string name="onboarding_permissions_subtitle">Ringly needs a few permissions to work</string>
+    <string name="onboarding_sync_title">Syncing contacts</string>
+    <string name="onboarding_sync_subtitle">Gathering your contact list</string>
+    <string name="onboarding_sync_failed">Sync failed. Check your connection and try again</string>
+    <string name="onboarding_retry">Retry</string>
+    <string name="onboarding_skip">Skip for now</string>
+    <string name="onboarding_ready_title">You\'re all set</string>
+    <string name="onboarding_ready_subtitle">Ringly is ready to show who\'s calling</string>
+    <string name="onboarding_ready_subtitle_degraded">Ringly is ready — add contacts and phone permissions from the Setup card to enable caller ID</string>
+    <string name="onboarding_ready_start">Start using Ringly</string>
+    <string name="onboarding_next">Next</string>
+
+    <string name="rationale_title">Permissions needed</string>
+    <string name="rationale_done">Done</string>
+    <string name="rationale_contacts_title">Contacts</string>
+    <string name="rationale_contacts_desc">Contact names and photos are shared across the group so Ringly can tell you who\'s calling</string>
+    <string name="rationale_contacts_allow">Allow</string>
+    <string name="rationale_phone_title">Phone</string>
+    <string name="rationale_phone_desc">Detects incoming calls on this device</string>
+    <string name="rationale_phone_allow">Allow</string>
+    <string name="rationale_notifications_title">Notifications</string>
+    <string name="rationale_notifications_desc">Shows caller ID as a notification when the overlay can\'t be shown</string>
+    <string name="rationale_notifications_allow">Allow</string>
+    <string name="rationale_overlay_title">Display over other apps</string>
+    <string name="rationale_overlay_desc">Shows a floating caller ID card on your screen during incoming calls</string>
+    <string name="rationale_open_app_settings">Open Settings</string>
+    <string name="rationale_overlay_open_settings">Open Settings</string>
+    <string name="rationale_not_now">Not now</string>
+    <string name="rationale_granted">Granted</string>
+    <string name="rationale_denied">Denied — enable in Settings</string>
+    <string name="rationale_denied_retry">Denied — you can try again</string>
+    <string name="rationale_degradation_note">You can keep using Ringly without these — caller ID works best when all permissions are on. You can change them anytime from the Setup card.</string>
 </resources>

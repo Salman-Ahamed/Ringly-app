@@ -90,6 +90,10 @@ class RinglyApp : Application(), Configuration.Provider {
         phoneStateMonitor.register()
     }
 
+    fun requestContactSync() {
+        syncScheduler.scheduleOneShot()
+    }
+
     private fun observeLifecycle() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
