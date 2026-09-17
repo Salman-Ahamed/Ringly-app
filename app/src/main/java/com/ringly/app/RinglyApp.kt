@@ -17,6 +17,7 @@ import com.ringly.app.data.session.SharedPreferencesUserSessionStorage
 import com.ringly.app.overlay.CallerIdNotificationFallback
 import com.ringly.app.overlay.CallerIdOverlayController
 import com.ringly.app.overlay.CallerIdOverlayView
+import com.ringly.app.overlay.CallerIdSource
 import com.ringly.app.sync.ContactChangeObserver
 import com.ringly.app.sync.ContactSyncWorker
 import com.ringly.app.sync.SharedPreferencesSyncSnapshotStorage
@@ -69,8 +70,16 @@ class RinglyApp : Application(), Configuration.Provider {
         CallerIdOverlayController(
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
             lookup = { ContactRepository().lookup(it) },
-            localNumbers = { snapshotStorage.load().entries.keys },
+            ownContacts = { snapshotStorage.load() },
             canShowOverlay = { PermissionHelper.canDrawOverlays(this) },
+            sourceLabel = { source, ownerName ->
+                when (source) {
+                    CallerIdSource.OWN_PHONE -> getString(R.string.overlay_saved_on_phone)
+                    CallerIdSource.POOL ->
+                        getString(R.string.overlay_saved_by_format, ownerName ?: "")
+                    CallerIdSource.UNKNOWN -> getString(R.string.overlay_unknown_caller)
+                }
+            },
             renderer = CallerIdOverlayView(this),
             fallback = CallerIdNotificationFallback(this)
         )

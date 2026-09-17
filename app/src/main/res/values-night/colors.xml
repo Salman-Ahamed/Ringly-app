@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_gray">#121212</color>
+    <color name="surface">#1D1B20</color>
+    <color name="surface_container_low">#1D1B20</color>
+    <color name="text_navy">#E8EDF5</color>
+    <color name="text_caption_gray">#B6BCCB</color>
+    <color name="granted_green">#81C784</color>
+    <color name="denied_text">#FFB74D</color>
+
+    <color name="colorOnSurface">#E8EDF5</color>
+    <color name="colorOnSurfaceVariant">#B6BCCB</color>
+    <color name="colorSurfaceVariant">#3A3F47</color>
+    <color name="colorPrimaryContainer">#1E4B8F</color>
+    <color name="colorOnPrimaryContainer">#D6E4FF</color>
+    <color name="colorSecondaryContainer">#274750</color>
+    <color name="colorOnSecondaryContainer">#B2DFDB</color>
+    <color name="colorError">#CF6679</color>
+    <color name="colorOnError">#FFFFFF</color>
+    <color name="colorErrorContainer">#57090F</color>
+    <color name="colorOnErrorContainer">#F9DEDC</color>
+    <color name="colorOutline">#8A8F99</color>
+</resources>

@@ -7,6 +7,7 @@ import com.ringly.app.call.IncomingCallPhase
 import com.ringly.app.data.models.LookupMatch
 import com.ringly.app.data.models.LookupResponse
 import com.ringly.app.sync.SyncLog
+import com.ringly.app.sync.SyncSnapshot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -16,8 +17,9 @@ import kotlinx.coroutines.launch
 class CallerIdOverlayController(
     private val scope: CoroutineScope,
     private val lookup: suspend (String) -> Result<LookupResponse>,
-    private val localNumbers: () -> Set<String>,
+    private val ownContacts: () -> SyncSnapshot,
     private val canShowOverlay: () -> Boolean,
+    private val sourceLabel: (CallerIdSource, String?) -> String,
     private val renderer: OverlayRenderer,
     private val fallback: CallerIdFallback = NoOpCallerIdFallback,
     private val selectBest: (List<LookupMatch>) -> LookupMatch? = BestMatchSelector::selectBest,
@@ -44,42 +46,41 @@ class CallerIdOverlayController(
     }
 
     private fun handleRing(number: String) {
-        if (localNumbers().contains(number)) {
-            log("skip: $number is a local contact")
-            return
-        }
         job?.cancel()
         endCall()
         job = scope.launch {
-            val response = try {
-                lookup(number)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
-            }.getOrNull()
-            val match = response
-                ?.takeIf { it.found }
-                ?.matches
-                ?.let(selectBest)
-            when {
-                match == null -> {
-                    log("no pool match for $number -> notification fallback")
-                    fallback.showUnknown(number)
-                    scheduleTimeout()
-                }
-                canShowOverlay() -> {
-                    log("pool match for $number -> ${match.name} (owner ${match.ownerName})")
-                    renderer.show(match, number)
-                    scheduleTimeout()
-                }
-                else -> {
-                    log("pool match for $number but overlay permission missing -> notification fallback")
-                    fallback.showMatch(match, number)
-                    scheduleTimeout()
-                }
+            val ownEntry = ownContacts().entryFor(number)
+            val poolMatch = if (ownEntry == null) lookupPoolMatch(number) else null
+            val resolution = CallerIdResolver.resolve(number, ownEntry, poolMatch)
+            val card = CallerIdCard(
+                number = resolution.number,
+                name = resolution.name,
+                sourceLabel = sourceLabel(resolution.source, resolution.ownerName),
+                photoUrl = resolution.photoUrl
+            )
+            if (canShowOverlay()) {
+                log("showing overlay for $number (${resolution.source})")
+                renderer.show(card)
+            } else {
+                log("overlay permission missing for $number (${resolution.source}) -> notification fallback")
+                fallback.show(card)
             }
+            scheduleTimeout()
         }
+    }
+
+    private suspend fun lookupPoolMatch(number: String): LookupMatch? {
+        val response = try {
+            lookup(number)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }.getOrNull()
+        return response
+            ?.takeIf { it.found }
+            ?.matches
+            ?.let(selectBest)
     }
 
     private fun scheduleTimeout() {

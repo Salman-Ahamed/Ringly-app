@@ -9,6 +9,7 @@
     <color name="danger_red">#C62828</color>
     <color name="warning_amber">#F9A825</color>
     <color name="background_gray">#F5F7FA</color>
+    <color name="surface_container_low">#F7F9FC</color>
     <color name="text_navy">#1A1A2E</color>
     <color name="text_caption_gray">#616161</color>
 

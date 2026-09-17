@@ -12,7 +12,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.ringly.app.MainActivity
 import com.ringly.app.R
-import com.ringly.app.data.models.LookupMatch
 import com.ringly.app.sync.SyncLog
 
 class CallerIdNotificationFallback(private val context: Context) : CallerIdFallback {
@@ -23,17 +22,9 @@ class CallerIdNotificationFallback(private val context: Context) : CallerIdFallb
 
     private var channelInitialized = false
 
-    override fun showUnknown(number: String) {
-        show(
-            title = number,
-            text = context.getString(R.string.overlay_incoming_call)
-        )
-    }
-
-    override fun showMatch(match: LookupMatch, number: String) {
-        val name = match.name.ifBlank { number }
-        val owner = context.getString(R.string.overlay_saved_by_format, match.ownerName)
-        show(title = name, text = "$number  •  $owner")
+    override fun show(card: CallerIdCard) {
+        val name = card.name.ifBlank { card.number }
+        show(title = name, text = "${card.number}  •  ${card.sourceLabel}")
     }
 
     override fun hide() {

@@ -1,9 +1,11 @@
 package com.ringly.app
 
 import android.Manifest
+import android.app.role.RoleManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
@@ -15,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.lifecycle.lifecycleScope
+import com.ringly.app.call.CallScreeningRole
 import com.ringly.app.dialer.ContactListActivity
 import com.ringly.app.dialer.DialerActivity
 import com.ringly.app.onboarding.DenyState
@@ -49,6 +52,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private val screeningRoleLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            updatePermissionStatuses()
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -72,8 +80,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.setup_status_notifications).setOnClickListener {
             requestNotificationPermissionIfNeeded()
         }
+        findViewById<View>(R.id.setup_status_screening).setOnClickListener {
+            requestScreeningRole()
+        }
         exposeAsButton(findViewById<View>(R.id.setup_status_phone))
         exposeAsButton(findViewById<View>(R.id.setup_status_notifications))
+        exposeAsButton(findViewById<View>(R.id.setup_status_screening))
         findViewById<View>(R.id.sync_now_button).setOnClickListener {
             startSync()
         }
@@ -159,6 +171,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun requestScreeningRole() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val roleManager = runCatching { getSystemService(RoleManager::class.java) }.getOrNull()
+        val requestIntent = roleManager
+            ?.let { runCatching { it.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING) }.getOrNull() }
+        if (requestIntent != null) {
+            runCatching { screeningRoleLauncher.launch(requestIntent) }
+                .onFailure { openDefaultAppsSettings() }
+        } else {
+            openDefaultAppsSettings()
+        }
+    }
+
+    private fun isScreeningRoleHeld(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+        return runCatching {
+            getSystemService(RoleManager::class.java)
+                ?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+                ?: false
+        }.getOrDefault(false)
+    }
+
+    private fun openDefaultAppsSettings() {
+        runCatching {
+            startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+        }.onFailure {
+            runCatching { startActivity(Intent(Settings.ACTION_SETTINGS)) }
+        }
+    }
+
     private fun updateSyncStatus() {
         val text = findViewById<TextView>(R.id.sync_status_text)
         val snapshot = SharedPreferencesSyncSnapshotStorage(this).load()
@@ -237,6 +279,25 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             notifications.visibility = View.GONE
+        }
+
+        val screening = findViewById<TextView>(R.id.setup_status_screening)
+        if (CallScreeningRole.isSupported(Build.VERSION.SDK_INT)) {
+            screening.visibility = View.VISIBLE
+            val held = isScreeningRoleHeld()
+            when (CallScreeningRole.status(Build.VERSION.SDK_INT, held)) {
+                CallScreeningRole.Status.GRANTED -> {
+                    screening.text = getString(R.string.hub_screening_permission_granted)
+                    screening.setTextColor(grantedColor)
+                }
+                CallScreeningRole.Status.NEEDED -> {
+                    screening.text = getString(R.string.hub_screening_permission_needed)
+                    screening.setTextColor(deniedColor)
+                }
+                CallScreeningRole.Status.UNAVAILABLE -> screening.visibility = View.GONE
+            }
+        } else {
+            screening.visibility = View.GONE
         }
     }
 }

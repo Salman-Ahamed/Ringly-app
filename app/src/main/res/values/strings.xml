@@ -11,6 +11,8 @@
     <string name="overlay_status_needs_permission">Caller ID overlay: grant Display over other apps</string>
     <string name="overlay_incoming_call">Incoming call</string>
     <string name="overlay_saved_by_format">Saved by %1$s</string>
+    <string name="overlay_saved_on_phone">On your phone</string>
+    <string name="overlay_unknown_caller">Unknown caller</string>
     <string name="caller_id_channel_name">Caller ID</string>
     <string name="caller_id_channel_desc">Shows who is calling when the overlay can\'t be shown</string>
 
@@ -50,6 +52,8 @@
     <string name="hub_overlay_permission_needed">Overlay: needed for caller ID card</string>
     <string name="hub_notifications_permission_granted">Notifications: granted</string>
     <string name="hub_notifications_permission_needed">Notifications: needed for fallback</string>
+    <string name="hub_screening_permission_granted">Call screening: granted</string>
+    <string name="hub_screening_permission_needed">Call screening: needed for caller ID</string>
 
     <string name="onboarding_welcome_title">Ringly</string>
     <string name="onboarding_welcome_subtitle">Know who\'s calling</string>
