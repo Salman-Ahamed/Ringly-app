@@ -24,8 +24,16 @@ class CallerIdOverlayController(
     private val fallback: CallerIdFallback = NoOpCallerIdFallback,
     private val selectBest: (List<LookupMatch>) -> LookupMatch? = BestMatchSelector::selectBest,
     private val overlayTimeoutMillis: Long = STALE_OVERLAY_TIMEOUT_MILLIS,
+    private val isPresentationManagedElsewhere: () -> Boolean = { false },
     private val log: (String) -> Unit = { SyncLog.d(TAG, it) }
 ) : IncomingCallListener {
+
+    private val resolverFlow = CallerIdResolverFlow(
+        lookup = lookup,
+        ownContacts = ownContacts,
+        sourceLabel = sourceLabel,
+        selectBest = selectBest
+    )
 
     private var job: Job? = null
 
@@ -49,38 +57,20 @@ class CallerIdOverlayController(
         job?.cancel()
         endCall()
         job = scope.launch {
-            val ownEntry = ownContacts().entryFor(number)
-            val poolMatch = if (ownEntry == null) lookupPoolMatch(number) else null
-            val resolution = CallerIdResolver.resolve(number, ownEntry, poolMatch)
-            val card = CallerIdCard(
-                number = resolution.number,
-                name = resolution.name,
-                sourceLabel = sourceLabel(resolution.source, resolution.ownerName),
-                photoUrl = resolution.photoUrl
-            )
+            val card = resolverFlow.resolveCard(number)
+            if (isPresentationManagedElsewhere()) {
+                log("presentation managed elsewhere for $number (in-call UI) -> skip")
+                return@launch
+            }
             if (canShowOverlay()) {
-                log("showing overlay for $number (${resolution.source})")
+                log("showing overlay for $number")
                 renderer.show(card)
             } else {
-                log("overlay permission missing for $number (${resolution.source}) -> notification fallback")
+                log("overlay permission missing for $number -> notification fallback")
                 fallback.show(card)
             }
             scheduleTimeout()
         }
-    }
-
-    private suspend fun lookupPoolMatch(number: String): LookupMatch? {
-        val response = try {
-            lookup(number)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Result.failure(e)
-        }.getOrNull()
-        return response
-            ?.takeIf { it.found }
-            ?.matches
-            ?.let(selectBest)
     }
 
     private fun scheduleTimeout() {

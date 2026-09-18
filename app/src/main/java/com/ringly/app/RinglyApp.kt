@@ -14,14 +14,18 @@ import com.ringly.app.call.PhoneStateMonitor
 import com.ringly.app.data.repository.ContactRepository
 import com.ringly.app.data.session.SessionManager
 import com.ringly.app.data.session.SharedPreferencesUserSessionStorage
+import com.ringly.app.dialer.DialerRole
+import com.ringly.app.overlay.CallerIdCard
 import com.ringly.app.overlay.CallerIdNotificationFallback
 import com.ringly.app.overlay.CallerIdOverlayController
 import com.ringly.app.overlay.CallerIdOverlayView
+import com.ringly.app.overlay.CallerIdResolverFlow
 import com.ringly.app.overlay.CallerIdSource
 import com.ringly.app.sync.ContactChangeObserver
 import com.ringly.app.sync.ContactSyncWorker
 import com.ringly.app.sync.SharedPreferencesSyncSnapshotStorage
 import com.ringly.app.sync.SyncScheduler
+import com.ringly.app.util.AppForeground
 import com.ringly.app.util.PermissionHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,8 +85,25 @@ class RinglyApp : Application(), Configuration.Provider {
                 }
             },
             renderer = CallerIdOverlayView(this),
-            fallback = CallerIdNotificationFallback(this)
+            fallback = CallerIdNotificationFallback(this),
+            isPresentationManagedElsewhere = { DialerRole.isHeld(this) }
         )
+    }
+
+    val callerIdCardProvider: suspend (String) -> CallerIdCard by lazy {
+        val snapshotStorage = SharedPreferencesSyncSnapshotStorage(this)
+        CallerIdResolverFlow(
+            lookup = { ContactRepository().lookup(it) },
+            ownContacts = { snapshotStorage.load() },
+            sourceLabel = { source, ownerName ->
+                when (source) {
+                    CallerIdSource.OWN_PHONE -> getString(R.string.overlay_saved_on_phone)
+                    CallerIdSource.POOL ->
+                        getString(R.string.overlay_saved_by_format, ownerName ?: "")
+                    CallerIdSource.UNKNOWN -> getString(R.string.overlay_unknown_caller)
+                }
+            }
+        )::resolveCard
     }
 
     override fun onCreate() {
@@ -106,9 +127,14 @@ class RinglyApp : Application(), Configuration.Provider {
     private fun observeLifecycle() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
+                AppForeground.enterForeground()
                 syncScheduler.scheduleOneShot()
                 observeContactChanges()
                 phoneStateMonitor.register()
+            }
+
+            override fun onStop(owner: LifecycleOwner) {
+                AppForeground.exitForeground()
             }
         })
     }

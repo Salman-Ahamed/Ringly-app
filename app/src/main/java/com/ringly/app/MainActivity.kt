@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import com.ringly.app.call.CallScreeningRole
 import com.ringly.app.dialer.ContactListActivity
 import com.ringly.app.dialer.DialerActivity
+import com.ringly.app.dialer.DialerRole
 import com.ringly.app.onboarding.DenyState
 import com.ringly.app.onboarding.PermissionDenyClassifier
 import com.ringly.app.sync.ContactSyncWorker
@@ -57,6 +58,11 @@ class MainActivity : AppCompatActivity() {
             updatePermissionStatuses()
         }
 
+    private val dialerRoleLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            updatePermissionStatuses()
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -83,9 +89,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.setup_status_screening).setOnClickListener {
             requestScreeningRole()
         }
+        findViewById<View>(R.id.setup_status_dialer).setOnClickListener {
+            requestDialerRole()
+        }
         exposeAsButton(findViewById<View>(R.id.setup_status_phone))
         exposeAsButton(findViewById<View>(R.id.setup_status_notifications))
         exposeAsButton(findViewById<View>(R.id.setup_status_screening))
+        exposeAsButton(findViewById<View>(R.id.setup_status_dialer))
         findViewById<View>(R.id.sync_now_button).setOnClickListener {
             startSync()
         }
@@ -178,6 +188,16 @@ class MainActivity : AppCompatActivity() {
             ?.let { runCatching { it.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING) }.getOrNull() }
         if (requestIntent != null) {
             runCatching { screeningRoleLauncher.launch(requestIntent) }
+                .onFailure { openDefaultAppsSettings() }
+        } else {
+            openDefaultAppsSettings()
+        }
+    }
+
+    private fun requestDialerRole() {
+        val requestIntent = DialerRole.requestIntent(this)
+        if (requestIntent != null) {
+            runCatching { dialerRoleLauncher.launch(requestIntent) }
                 .onFailure { openDefaultAppsSettings() }
         } else {
             openDefaultAppsSettings()
@@ -298,6 +318,25 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             screening.visibility = View.GONE
+        }
+
+        val dialer = findViewById<TextView>(R.id.setup_status_dialer)
+        if (DialerRole.isSupported(Build.VERSION.SDK_INT)) {
+            dialer.visibility = View.VISIBLE
+            val held = DialerRole.isHeld(this)
+            when (DialerRole.status(Build.VERSION.SDK_INT, held)) {
+                DialerRole.Status.GRANTED -> {
+                    dialer.text = getString(R.string.hub_dialer_permission_granted)
+                    dialer.setTextColor(grantedColor)
+                }
+                DialerRole.Status.NEEDED -> {
+                    dialer.text = getString(R.string.hub_dialer_permission_needed)
+                    dialer.setTextColor(deniedColor)
+                }
+                DialerRole.Status.UNAVAILABLE -> dialer.visibility = View.GONE
+            }
+        } else {
+            dialer.visibility = View.GONE
         }
     }
 }

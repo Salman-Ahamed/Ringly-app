@@ -66,6 +66,7 @@ class CallerIdOverlayControllerTest {
         ownContacts: () -> SyncSnapshot = { SyncSnapshot.EMPTY },
         canShowOverlay: () -> Boolean = { true },
         overlayTimeoutMillis: Long = 60_000L,
+        isPresentationManagedElsewhere: () -> Boolean = { false },
         log: (String) -> Unit = {}
     ) = CallerIdOverlayController(
         scope = scope,
@@ -76,6 +77,7 @@ class CallerIdOverlayControllerTest {
         renderer = renderer,
         fallback = fallback,
         overlayTimeoutMillis = overlayTimeoutMillis,
+        isPresentationManagedElsewhere = isPresentationManagedElsewhere,
         log = log
     )
 
@@ -420,6 +422,50 @@ class CallerIdOverlayControllerTest {
         runCurrent()
 
         assertEquals(1, renderer.dismissCount)
+    }
+
+    @Test
+    fun `presentation managed elsewhere skips renderer and fallback`() = runTest {
+        val lookupCalls = mutableListOf<String>()
+        val renderer = FakeRenderer()
+        val fallback = FakeFallback()
+        val c = controller(
+            scope = this,
+            renderer = renderer,
+            fallback = fallback,
+            lookup = { number -> lookupCalls += number; Result.success(LookupResponse(found = true, matches = listOf(photoMatch()))) },
+            canShowOverlay = { false },
+            isPresentationManagedElsewhere = { true }
+        )
+
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        runCurrent()
+
+        assertEquals(listOf("+8801710000001"), lookupCalls)
+        assertTrue(renderer.shown.isEmpty())
+        assertTrue(fallback.shown.isEmpty())
+    }
+
+    @Test
+    fun `presentation managed elsewhere does not auto dismiss stale overlay`() = runTest {
+        val renderer = FakeRenderer()
+        val fallback = FakeFallback()
+        val c = controller(
+            scope = this,
+            renderer = renderer,
+            fallback = fallback,
+            lookup = { Result.success(LookupResponse(found = false, matches = emptyList())) },
+            isPresentationManagedElsewhere = { true },
+            overlayTimeoutMillis = 1_000L
+        )
+
+        c.onCallEvent(IncomingCallEvent(IncomingCallPhase.RINGING, "+8801710000001"))
+        advanceTimeBy(2_000)
+        runCurrent()
+
+        assertEquals(0, renderer.dismissCount)
+        assertTrue(renderer.shown.isEmpty())
+        assertTrue(fallback.shown.isEmpty())
     }
 
     private fun photoMatch() = LookupMatch("Rahim", photoUrl = "https://example.com/rahim.jpg", ownerName = "Salman")

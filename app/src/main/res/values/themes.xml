@@ -65,4 +65,12 @@
     <style name="ButtonStyle.Ringly.Outlined" parent="Widget.Material3.Button.OutlinedButton">
         <item name="cornerRadius">12dp</item>
     </style>
+
+    <style name="Theme.Ringly.InCall" parent="Theme.Ringly" tools:targetApi="27">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/background_gray</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
 </resources>

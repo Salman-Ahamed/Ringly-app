@@ -4,6 +4,8 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.telecom.PhoneAccount
+import android.telecom.TelecomManager
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -85,6 +87,27 @@ class DialerActivity : AppCompatActivity() {
         )
 
         digitsText.addTextChangedListener(textWatcher)
+        handleIncomingDialIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingDialIntent(intent)
+    }
+
+    private fun handleIncomingDialIntent(intent: Intent?) {
+        val number = dialNumberFrom(intent) ?: return
+        digitsText.setText(number)
+    }
+
+    private fun dialNumberFrom(intent: Intent?): String? {
+        val uri = intent?.data ?: return null
+        return when (uri.scheme) {
+            "tel" -> uri.schemeSpecificPart
+            "voicemail" -> "voicemail"
+            else -> null
+        }
     }
 
     override fun onDestroy() {
@@ -135,11 +158,18 @@ class DialerActivity : AppCompatActivity() {
     private fun placeCall() {
         val raw = dialDigits()
         if (raw.isEmpty()) return
+        val telecomManager = getSystemService(TelecomManager::class.java) ?: run {
+            openDialerWithNumber()
+            return
+        }
         try {
-            startActivity(
-                Intent(Intent.ACTION_CALL, Uri.parse("tel:$raw"))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
+            val account = telecomManager.getDefaultOutgoingPhoneAccount(PhoneAccount.SCHEME_TEL)
+                ?: telecomManager.callCapablePhoneAccounts?.firstOrNull()
+            val extras = Bundle()
+            if (account != null) {
+                extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, account)
+            }
+            telecomManager.placeCall(Uri.parse("tel:$raw"), extras)
         } catch (e: SecurityException) {
             openDialerWithNumber()
         }

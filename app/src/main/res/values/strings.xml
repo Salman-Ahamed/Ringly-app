@@ -18,6 +18,7 @@
 
     <string name="dialer_button">Dialer</string>
     <string name="contacts_button">Contacts</string>
+    <string name="sms_button">SMS</string>
     <string name="dialer_title">Dial</string>
     <string name="dialer_delete">Delete</string>
     <string name="dialer_call">Call</string>
@@ -33,6 +34,26 @@
     <string name="contacts_loading">Loading contacts…</string>
     <string name="contacts_error">Could not load contacts</string>
     <string name="contacts_retry">Retry</string>
+
+    <string name="sms_title">Messages</string>
+    <string name="sms_empty">No conversations yet</string>
+    <string name="sms_loading">Loading messages…</string>
+    <string name="sms_error">Could not load messages</string>
+    <string name="sms_retry">Retry</string>
+    <string name="sms_compose">New message</string>
+    <string name="sms_thread_back">Back</string>
+    <string name="sms_message_hint">Type message</string>
+    <string name="sms_send">Send</string>
+    <string name="sms_unknown_sender">Unknown</string>
+    <string name="sms_permission_needed">SMS access needed to show conversations</string>
+    <string name="sms_grant">Allow</string>
+    <string name="sms_make_default">Make Ringly the default SMS app</string>
+    <string name="sms_compose_input_hint">Recipient number</string>
+    <string name="sms_compose_open">Open</string>
+    <string name="sms_compose_cancel">Cancel</string>
+    <string name="sms_send_failed_snackbar">Message could not be sent</string>
+    <string name="sms_channel_name">SMS</string>
+    <string name="sms_channel_desc">Shows notifications for new messages</string>
 
     <string name="hub_setup">Setup</string>
     <string name="hub_setup_subtitle">Permissions &amp; sync</string>
@@ -54,6 +75,20 @@
     <string name="hub_notifications_permission_needed">Notifications: needed for fallback</string>
     <string name="hub_screening_permission_granted">Call screening: granted</string>
     <string name="hub_screening_permission_needed">Call screening: needed for caller ID</string>
+    <string name="hub_dialer_permission_granted">Default dialer: Ringly</string>
+    <string name="hub_dialer_permission_needed">Default dialer: needed for in-call screen</string>
+
+    <string name="incall_title_incoming">Incoming call</string>
+    <string name="incall_title_calling">Calling…</string>
+    <string name="incall_title_active">In call</string>
+    <string name="incall_title_ended">Call ended</string>
+    <string name="incall_answer">Answer</string>
+    <string name="incall_decline">Decline</string>
+    <string name="incall_end">End call</string>
+    <string name="incall_mute">Mute</string>
+    <string name="incall_unmute">Unmute</string>
+    <string name="incall_speaker">Speaker</string>
+    <string name="incall_speaker_off">Speaker off</string>
 
     <string name="onboarding_welcome_title">Ringly</string>
     <string name="onboarding_welcome_subtitle">Know who\'s calling</string>
